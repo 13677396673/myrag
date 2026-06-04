@@ -8,13 +8,13 @@
 ## 总体进度
 
 ```
-[████████░░░░░░░░░░░░]  4% — Phase 0 已完成
+[██████░░░░░░░░░░░░░░]  6% — Phase 0 已完成, Phase 1 (1/5)
 ```
 
 | 阶段 | 进度 | 模块数 | 已完成 |
 |------|------|--------|--------|
 | **Phase 0: 项目骨架** | [██████████] 100% | 1 | 1/1 |
-| **Phase 1: 基础设施层** | [░░░░░░░░░░] 0% | 5 | 0/5 |
+| **Phase 1: 基础设施层** | [██░░░░░░░░] 20% | 5 | 1/5 |
 | **Phase 2: RAG 核心接口层** | [░░░░░░░░░░] 0% | 1 | 0/1 |
 | **Phase 3: RAG 组件实现层** | [░░░░░░░░░░] 0% | 6 | 0/6 |
 | **Phase 4: RAG 编排层** | [░░░░░░░░░░] 0% | 2 | 0/2 |
@@ -31,7 +31,7 @@
 | 编号 | 模块 | 文件 | 阶段 | 状态 | 优先级 |
 |------|------|------|------|------|--------|
 | M00 | 项目骨架搭建 | [project-setup.md](project-setup.md) | Phase 0 | ✅ 已完成 | P0 |
-| M01 | 配置管理 | [module-config.md](module-config.md) | Phase 1 | 🔲 未开始 | P0 |
+| M01 | 配置管理 | [module-config.md](module-config.md) | Phase 1 | ✅ 已完成 | P0 |
 | M02 | ORM 模型 | [module-models.md](module-models.md) | Phase 1 | 🔲 未开始 | P0 |
 | M03 | Pydantic 模式 | [module-schemas.md](module-schemas.md) | Phase 1 | 🔲 未开始 | P0 |
 | M04 | 数据库模块 | [module-database.md](module-database.md) | Phase 1 | 🔲 未开始 | P0 |
