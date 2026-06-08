@@ -1,6 +1,6 @@
 # RAG 智能知识库系统 — 总体进度跟踪
 
-> 最后更新：2026-06-07
+> 最后更新：2026-06-08
 > 总模块数：23 个后端模块 + 前端 + 部署
 
 ---
@@ -8,13 +8,13 @@
 ## 总体进度
 
 ```
-[██████████░░░░░░░░░░]  10% — Phase 0 已完成, Phase 1 (3/5)
+[██████████░░░░░░░░░░]  10% — Phase 0 已完成, Phase 1 (4/5)
 ```
 
 | 阶段 | 进度 | 模块数 | 已完成 |
 |------|------|--------|--------|
 | **Phase 0: 项目骨架** | [██████████] 100% | 1 | 1/1 |
-| **Phase 1: 基础设施层** | [██████░░░░] 60% | 5 | 3/5 |
+| **Phase 1: 基础设施层** | [████████░░] 80% | 5 | 4/5 |
 | **Phase 2: RAG 核心接口层** | [░░░░░░░░░░] 0% | 1 | 0/1 |
 | **Phase 3: RAG 组件实现层** | [░░░░░░░░░░] 0% | 6 | 0/6 |
 | **Phase 4: RAG 编排层** | [░░░░░░░░░░] 0% | 2 | 0/2 |
@@ -34,7 +34,7 @@
 | M01 | 配置管理 | [module-config.md](module-config.md) | Phase 1 | ✅ 已完成 | P0 |
 | M02 | ORM 模型 | [module-models.md](module-models.md) | Phase 1 | ✅ 已完成 | P0 |
 | M03 | Pydantic 模式 | [module-schemas.md](module-schemas.md) | Phase 1 | ✅ 已完成 | P0 |
-| M04 | 数据库模块 | [module-database.md](module-database.md) | Phase 1 | 🔲 未开始 | P0 |
+| M04 | 数据库模块 | [module-database.md](module-database.md) | Phase 1 | ✅ 已完成 | P0 |
 | M05 | 安全模块 | [module-security.md](module-security.md) | Phase 1 | 🔲 未开始 | P0 |
 | M06 | 文件存储 | [module-storage.md](module-storage.md) | Phase 1 | 🔲 未开始 | P0 |
 | M07 | 任务队列 | [module-task-queue.md](module-task-queue.md) | Phase 1 | 🔲 未开始 | P0 |
