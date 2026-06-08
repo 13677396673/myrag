@@ -1,6 +1,6 @@
 # M03：Pydantic 模式模块 (schemas)
 
-**阶段**: Phase 1 | **优先级**: P0 | **状态**: 🔲 未开始
+**阶段**: Phase 1 | **优先级**: P0 | **状态**: ✅ 已完成
 
 **依赖模块**: 无（完全独立）
 
@@ -12,78 +12,78 @@
 
 ### 1. 通用模式
 
-- [ ] 创建 `backend/app/schemas/__init__.py`
-- [ ] 创建 `backend/app/schemas/common.py`
-  - [ ] `ApiResponse[T]` — 统一响应包装
-  - [ ] `PaginatedResponse[T]` — 分页响应
-  - [ ] `PaginationParams` — 分页请求参数
+- [x] 创建 `backend/app/schemas/__init__.py`
+- [x] 创建 `backend/app/schemas/common.py`
+  - [x] `ApiResponse[T]` — 统一响应包装
+  - [x] `PaginatedResponse[T]` — 分页响应
+  - [x] `PaginationParams` — 分页请求参数
 
 ### 2. 用户模式
 
-- [ ] 创建 `backend/app/schemas/user.py`
-  - [ ] `UserRegisterRequest`：username(2-50, 字母数字下划线)、email、password(6-128)
-  - [ ] `UserLoginRequest`：username、password
-  - [ ] `UserResponse`：id、username、email、role、is_active、created_at
-  - [ ] `UserUpdateRequest`：email(可选)
-  - [ ] `PasswordChangeRequest`：old_password、new_password(6-128)
-  - [ ] `TokenResponse`：access_token、token_type、user(UserResponse)
+- [x] 创建 `backend/app/schemas/user.py`
+  - [x] `UserRegisterRequest`：username(2-50, 字母数字下划线)、email、password(6-128)
+  - [x] `UserLoginRequest`：username、password
+  - [x] `UserResponse`：id、username、email、role、is_active、created_at
+  - [x] `UserUpdateRequest`：email(可选)
+  - [x] `PasswordChangeRequest`：old_password、new_password(6-128)
+  - [x] `TokenResponse`：access_token、token_type、user(UserResponse)
 
 ### 3. 数据集模式
 
-- [ ] 创建 `backend/app/schemas/dataset.py`
-  - [ ] `DatasetCreateRequest`：name(必填)、description(可选)
-  - [ ] `DatasetUpdateRequest`：name(可选)、description(可选)
-  - [ ] `DatasetResponse`：id、name、description、document_count、created_at、updated_at
+- [x] 创建 `backend/app/schemas/dataset.py`
+  - [x] `DatasetCreateRequest`：name(必填)、description(可选)
+  - [x] `DatasetUpdateRequest`：name(可选)、description(可选)
+  - [x] `DatasetResponse`：id、name、description、document_count、created_at、updated_at
 
 ### 4. 文档模式
 
-- [ ] 创建 `backend/app/schemas/document.py`
-  - [ ] `DocumentResponse`：id、filename、file_type、file_size、status、error_message、dataset_id、chunk_count、created_at、updated_at
-  - [ ] `DocumentStatusResponse`：id、status、progress(0~1)、error_message
+- [x] 创建 `backend/app/schemas/document.py`
+  - [x] `DocumentResponse`：id、filename、file_type、file_size、status、error_message、dataset_id、chunk_count、created_at、updated_at
+  - [x] `DocumentStatusResponse`：id、status、progress(0~1)、error_message
 
 ### 5. 切片模式
 
-- [ ] 创建 `backend/app/schemas/chunk.py`
-  - [ ] `ChunkResponse`：id、document_id、content、chunk_index、metadata
+- [x] 创建 `backend/app/schemas/chunk.py`
+  - [x] `ChunkResponse`：id、document_id、content、chunk_index、metadata
 
 ### 6. 对话模式
 
-- [ ] 创建 `backend/app/schemas/conversation.py`
-  - [ ] `ConversationCreateRequest`：title(默认"新对话")、dataset_id(可选)
-  - [ ] `ConversationResponse`：id、title、dataset_id、message_count、created_at、updated_at
-  - [ ] `MessageSendRequest`：content(1-10000)
-  - [ ] `SourceCitation`：chunk_id、content、document_name、score
-  - [ ] `MessageResponse`：id、role、content、sources(list)、created_at
-  - [ ] `MessageStreamEvent`：type(delta/done/sources/error)、content
+- [x] 创建 `backend/app/schemas/conversation.py`
+  - [x] `ConversationCreateRequest`：title(默认"新对话")、dataset_id(可选)
+  - [x] `ConversationResponse`：id、title、dataset_id、message_count、created_at、updated_at
+  - [x] `MessageSendRequest`：content(1-10000)
+  - [x] `SourceCitation`：chunk_id、content、document_name、score
+  - [x] `MessageResponse`：id、role、content、sources(list)、created_at
+  - [x] `MessageStreamEvent`：type(delta/done/sources/error)、content
 
 ### 7. 管理后台模式
 
-- [ ] 创建 `backend/app/schemas/admin.py`
-  - [ ] `SystemStatsResponse`：total_users、total_documents、total_conversations、total_chunks、active_users_today
+- [x] 创建 `backend/app/schemas/admin.py`
+  - [x] `SystemStatsResponse`：total_users、total_documents、total_conversations、total_chunks、active_users_today
 
 ### 8. schemas/\_\_init\_\_.py
 
-- [ ] 导出所有模式类
+- [x] 导出所有模式类
 
 ### 9. 测试
 
-- [ ] 创建 `backend/app/schemas/tests/__init__.py`
-- [ ] 创建 `backend/app/schemas/tests/test_user_schemas.py`
-  - [ ] 测试用户注册请求校验（用户名过短/过长/非法字符、密码过短、邮箱格式）
-  - [ ] 测试用户响应序列化
-- [ ] 创建 `backend/app/schemas/tests/test_dataset_schemas.py`
-  - [ ] 测试数据集创建请求
-- [ ] 创建 `backend/app/schemas/tests/test_document_schemas.py`
-  - [ ] 测试文档响应格式
-- [ ] 创建 `backend/app/schemas/tests/test_conversation_schemas.py`
-  - [ ] 测试消息发送请求长度限制
-  - [ ] 测试 SSE 事件格式
+- [x] 创建 `backend/app/schemas/tests/__init__.py`
+- [x] 创建 `backend/app/schemas/tests/test_user_schemas.py`
+  - [x] 测试用户注册请求校验（用户名过短/过长/非法字符、密码过短、邮箱格式）
+  - [x] 测试用户响应序列化
+- [x] 创建 `backend/app/schemas/tests/test_dataset_schemas.py`
+  - [x] 测试数据集创建请求
+- [x] 创建 `backend/app/schemas/tests/test_document_schemas.py`
+  - [x] 测试文档响应格式
+- [x] 创建 `backend/app/schemas/tests/test_conversation_schemas.py`
+  - [x] 测试消息发送请求长度限制
+  - [x] 测试 SSE 事件格式
 
 ### 10. 验证
 
-- [ ] 所有模式可导入无报错
-- [ ] `pydantic` 类型校验正常
-- [ ] `pytest backend/app/schemas/tests/` 全部通过
+- [x] 所有模式可导入无报错
+- [x] `pydantic` 类型校验正常
+- [x] `pytest backend/app/schemas/tests/` 全部通过（49 passed）
 
 ---
 
