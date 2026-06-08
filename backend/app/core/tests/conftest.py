@@ -1,12 +1,14 @@
-"""数据库模块测试夹具"""
+"""核心模块测试夹具 — 数据库 + 文件存储"""
 
 import os
 import tempfile
+from pathlib import Path
 
 import pytest
 
 from app.config.settings import Settings
 from app.core.database import DatabaseManager
+from app.core.storage import LocalFileStorage
 
 
 @pytest.fixture
@@ -47,3 +49,19 @@ async def db_manager_with_tables(sqlite_settings) -> DatabaseManager:
     await db.create_tables()
     yield db
     await db.close()
+
+
+# ── 文件存储夹具 ────────────────────────────────────────────
+
+
+@pytest.fixture
+def tmp_dir() -> str:
+    """创建临时目录用于文件存储测试，测试结束后自动清理"""
+    with tempfile.TemporaryDirectory(prefix="rag_storage_test_") as tmpdir:
+        yield tmpdir
+
+
+@pytest.fixture
+def local_storage(tmp_dir: str) -> LocalFileStorage:
+    """返回基于临时目录的 LocalFileStorage 实例"""
+    return LocalFileStorage(base_path=tmp_dir)
