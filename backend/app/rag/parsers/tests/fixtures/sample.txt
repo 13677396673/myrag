@@ -1,0 +1,9 @@
+Hello, this is a sample text file.
+
+It contains multiple lines of text.
+
+This is the third line.
+
+中文测试：这是一个中文段落。
+
+混合内容: Mixed content with numbers 12345 and symbols !@#$%.
