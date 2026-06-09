@@ -9,6 +9,7 @@ import pytest
 from app.config.settings import Settings
 from app.core.database import DatabaseManager
 from app.core.storage import LocalFileStorage
+from app.core.task_queue import HueyTaskQueue
 
 
 @pytest.fixture
@@ -65,3 +66,24 @@ def tmp_dir() -> str:
 def local_storage(tmp_dir: str) -> LocalFileStorage:
     """返回基于临时目录的 LocalFileStorage 实例"""
     return LocalFileStorage(base_path=tmp_dir)
+
+
+# ── 任务队列夹具 ────────────────────────────────────────────
+
+
+@pytest.fixture
+def tmp_sqlite_path() -> str:
+    """创建临时 SQLite 文件路径，测试结束后清理"""
+    fd, path = tempfile.mkstemp(suffix=".db", prefix="rag_task_queue_test_")
+    os.close(fd)
+    yield path
+    try:
+        os.unlink(path)
+    except OSError:
+        pass
+
+
+@pytest.fixture
+def huey_task_queue(tmp_sqlite_path: str) -> HueyTaskQueue:
+    """返回基于临时文件的 HueyTaskQueue 实例（immediate 模式）"""
+    return HueyTaskQueue(db_path=tmp_sqlite_path, immediate=True)

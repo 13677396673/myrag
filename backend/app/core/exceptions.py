@@ -65,3 +65,14 @@ class DatabaseError(RagError):
         detail: Optional[Any] = None,
     ) -> None:
         super().__init__(code="database_error", message=message, detail=detail)
+
+
+class TaskQueueError(RagError):
+    """任务队列相关错误"""
+
+    def __init__(
+        self,
+        message: str = "Task queue error",
+        detail: Optional[Any] = None,
+    ) -> None:
+        super().__init__(code="task_queue_error", message=message, detail=detail)
