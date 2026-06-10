@@ -1,6 +1,6 @@
 # RAG 智能知识库系统 — 总体进度跟踪
 
-> 最后更新：2026-06-09 (Phase 1 ✅, Phase 2 ✅, Phase 3 🔄 2/6)
+> 最后更新：2026-06-09 (Phase 1 ✅, Phase 2 ✅, Phase 3 🔄 3/6)
 > 总模块数：23 个后端模块 + 前端 + 部署
 
 ---
@@ -16,7 +16,7 @@
 | **Phase 0: 项目骨架** | [██████████] 100% | 1 | 1/1 |
 | **Phase 1: 基础设施层** | [██████████] 100% | 7 | 7/7 |
 | **Phase 2: RAG 核心接口层** | [██████████] 100% | 1 | 1/1 |
-| **Phase 3: RAG 组件实现层** | [████░░░░░░░░] 33% | 6 | 2/6 |
+| **Phase 3: RAG 组件实现层** | [█████░░░░░░░] 50% | 6 | 3/6 |
 | **Phase 4: RAG 编排层** | [░░░░░░░░░░] 0% | 2 | 0/2 |
 | **Phase 5: 业务服务层** | [░░░░░░░░░░] 0% | 5 | 0/5 |
 | **Phase 6: API 与组装层** | [░░░░░░░░░░] 0% | 2 | 0/2 |
@@ -41,7 +41,7 @@
 | M08 | RAG 抽象接口 | [module-interfaces.md](module-interfaces.md) | Phase 2 | ✅ 已完成 | P0 |
 | M09 | 文档解析器 | [module-parsers.md](module-parsers.md) | Phase 3 | ✅ 已完成 | P0 |
 | M10 | 文本切片器 | [module-splitters.md](module-splitters.md) | Phase 3 | ✅ 已完成 | P0 |
-| M11 | Embedding | [module-embeddings.md](module-embeddings.md) | Phase 3 | 🔲 未开始 | P0 |
+| M11 | Embedding | [module-embeddings.md](module-embeddings.md) | Phase 3 | ✅ 已完成 | P0 |
 | M12 | 向量存储 | [module-vector-stores.md](module-vector-stores.md) | Phase 3 | 🔲 未开始 | P0 |
 | M13 | LLM | [module-llms.md](module-llms.md) | Phase 3 | 🔲 未开始 | P0 |
 | M14 | 检索器 | [module-retrievers.md](module-retrievers.md) | Phase 3 | 🔲 未开始 | P1 |
