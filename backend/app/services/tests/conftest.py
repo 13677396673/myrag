@@ -1,4 +1,4 @@
-"""用户服务测试夹具 — DatabaseManager + SecurityManager + UserService"""
+"""用户服务 + 数据集服务测试夹具"""
 
 import os
 import tempfile
@@ -8,13 +8,14 @@ import pytest
 from app.config.settings import Settings
 from app.core.database import DatabaseManager
 from app.core.security import SecurityManager
+from app.services.dataset_service import DatasetService
 from app.services.user_service import UserService
 
 
 @pytest.fixture(scope="function")
 def sqlite_db_path() -> str:
     """创建临时 SQLite 数据库文件路径，测试结束后清理"""
-    fd, path = tempfile.mkstemp(suffix=".db", prefix="rag_test_user_svc_")
+    fd, path = tempfile.mkstemp(suffix=".db", prefix="rag_test_svc_")
     os.close(fd)
     yield path
     try:
@@ -29,7 +30,7 @@ def settings(sqlite_db_path: str) -> Settings:
     return Settings(
         DATABASE_URL=f"sqlite+aiosqlite:///{sqlite_db_path}",
         DATABASE_ECHO=False,
-        JWT_SECRET_KEY="test-secret-for-user-service",
+        JWT_SECRET_KEY="test-secret",
         JWT_ALGORITHM="HS256",
     )
 
@@ -60,6 +61,12 @@ def user_service(
 
 
 @pytest.fixture(scope="function")
+def dataset_service(db_manager: DatabaseManager) -> DatasetService:
+    """返回测试用的 DatasetService 实例"""
+    return DatasetService(db=db_manager)
+
+
+@pytest.fixture(scope="function")
 async def sample_user(user_service: UserService) -> dict:
     """预先创建一个测试用户，返回注册信息和响应"""
     from app.schemas.user import UserRegisterRequest
@@ -79,3 +86,37 @@ async def sample_user(user_service: UserService) -> dict:
         "is_active": user.is_active,
         "response": user,
     }
+
+
+@pytest.fixture(scope="function")
+async def another_user(user_service: UserService) -> dict:
+    """创建另一个测试用户，用于验证用户隔离"""
+    from app.schemas.user import UserRegisterRequest
+
+    request = UserRegisterRequest(
+        username="otheruser",
+        email="other@example.com",
+        password="pass456",
+    )
+    user = await user_service.register(request)
+    return {
+        "id": user.id,
+        "username": user.username,
+        "email": user.email,
+        "password": "pass456",
+    }
+
+
+@pytest.fixture(scope="function")
+async def sample_dataset(
+    dataset_service: DatasetService, sample_user: dict
+):
+    """预先创建一个测试数据集，返回 DatasetResponse"""
+    from app.schemas.dataset import DatasetCreateRequest
+
+    request = DatasetCreateRequest(
+        name="测试数据集",
+        description="这是一个测试数据集",
+    )
+    return await dataset_service.create(request, user_id=sample_user["id"])
+
