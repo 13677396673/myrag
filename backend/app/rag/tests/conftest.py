@@ -13,6 +13,8 @@ from app.rag.interfaces.parser import ParsedDocument, DocumentParser
 from app.rag.interfaces.splitter import TextSplitter, DocumentChunk
 from app.rag.interfaces.embedding import EmbeddingBackend
 from app.rag.interfaces.vector_store import VectorStore, SearchResult
+from app.rag.interfaces.llm import LLMBackend
+from app.rag.interfaces.retriever import Retriever
 from app.rag.parsers.parser_router import ParserRouter
 from app.rag.pipeline import DocumentPipeline
 
@@ -165,3 +167,117 @@ def pipeline(parser_router, mock_splitter, mock_embedding, mock_vector_store):
         embedding=mock_embedding,
         vector_store=mock_vector_store,
     )
+
+
+# =========================================================================
+# RAGEngine Mocks & Fixtures
+# =========================================================================
+
+
+class MockRetriever(Retriever):
+    """模拟检索器：返回固定的检索结果"""
+
+    def __init__(self, results: Optional[List[SearchResult]] = None):
+        self._results = results or []
+        self.last_query = None
+        self.last_top_k = None
+        self.last_filter_conditions = None
+
+    def retrieve(
+        self,
+        query: str,
+        top_k: int = 5,
+        filter_conditions: Optional[dict] = None,
+    ) -> List[SearchResult]:
+        self.last_query = query
+        self.last_top_k = top_k
+        self.last_filter_conditions = filter_conditions
+        return self._results
+
+
+class MockLLM(LLMBackend):
+    """模拟 LLM 后端：支持非流式和流式生成"""
+
+    def __init__(
+        self,
+        response: str = "这是基于检索结果的回答。",
+        tokens: Optional[List[str]] = None,
+        model_name: str = "mock-model",
+    ):
+        self._response = response
+        self._tokens = tokens or list(response)
+        self._model_name = model_name
+        self.last_messages = None
+        self.last_temperature = None
+        self.last_max_tokens = None
+
+    async def generate(
+        self,
+        messages,
+        temperature: float = 0.7,
+        max_tokens: int = 2048,
+    ) -> str:
+        self.last_messages = messages
+        self.last_temperature = temperature
+        self.last_max_tokens = max_tokens
+        return self._response
+
+    async def generate_stream(self, messages, temperature=0.7, max_tokens=2048):
+        self.last_messages = messages
+        self.last_temperature = temperature
+        self.last_max_tokens = max_tokens
+        for token in self._tokens:
+            yield token
+
+    @property
+    def model_name(self) -> str:
+        return self._model_name
+
+
+# ── RAGEngine Fixtures ──
+
+
+@pytest.fixture
+def mock_retriever():
+    """返回一个无结果的模拟检索器"""
+    return MockRetriever(results=[])
+
+
+@pytest.fixture
+def mock_retriever_with_results():
+    """返回一个有 3 条检索结果的模拟检索器"""
+    results = [
+        SearchResult(
+            id="chunk-001",
+            score=0.95,
+            metadata={"document_id": "doc-1", "chunk_index": 0},
+            content="RAG 是检索增强生成的缩写。",
+        ),
+        SearchResult(
+            id="chunk-002",
+            score=0.88,
+            metadata={"document_id": "doc-1", "chunk_index": 1},
+            content="RAG 结合了检索和生成两种技术。",
+        ),
+        SearchResult(
+            id="chunk-003",
+            score=0.72,
+            metadata={"document_id": "doc-2", "chunk_index": 0},
+            content="检索增强生成能有效减少模型幻觉。",
+        ),
+    ]
+    return MockRetriever(results=results)
+
+
+@pytest.fixture
+def mock_llm():
+    """返回一个模拟 LLM 后端"""
+    return MockLLM(response="这是基于检索结果的回答。")
+
+
+@pytest.fixture
+def rag_engine(mock_retriever_with_results, mock_llm):
+    """返回一个完整的 RAGEngine 实例（所有组件均为 Mock）"""
+    from app.rag.rag_engine import RAGEngine
+
+    return RAGEngine(retriever=mock_retriever_with_results, llm=mock_llm)

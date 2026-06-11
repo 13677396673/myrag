@@ -13,6 +13,7 @@ from .interfaces import (
     LLMBackend,
     Retriever,
 )
+from .rag_engine import RAGEngine
 
 __all__ = [
     "DocumentParser",
@@ -24,4 +25,5 @@ __all__ = [
     "SearchResult",
     "LLMBackend",
     "Retriever",
+    "RAGEngine",
 ]
