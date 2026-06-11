@@ -1,6 +1,6 @@
 # RAG 智能知识库系统 — 总体进度跟踪
 
-> 最后更新：2026-06-11 (Phase 1 ✅, Phase 2 ✅, Phase 3 ✅, Phase 4 ✅ 2/2, Phase 5 ▶️ 3/5)
+> 最后更新：2026-06-11 (Phase 1 ✅, Phase 2 ✅, Phase 3 ✅, Phase 4 ✅ 2/2, Phase 5 ▶️ 4/5)
 > 总模块数：23 个后端模块 + 前端 + 部署
 
 ---
@@ -8,7 +8,7 @@
 ## 总体进度
 
 ```
-[█████████████████████████]  72% — Phase 0 ✅, Phase 1 ✅, Phase 2 ✅, Phase 3 ✅, Phase 4 ✅
+[██████████████████████████]  75% — Phase 0 ✅, Phase 1 ✅, Phase 2 ✅, Phase 3 ✅, Phase 4 ✅
 ```
 
 | 阶段 | 进度 | 模块数 | 已完成 |
@@ -18,7 +18,7 @@
 | **Phase 2: RAG 核心接口层** | [██████████] 100% | 1 | 1/1 |
 | **Phase 3: RAG 组件实现层** | [████████████] 100% | 6 | 6/6 |
 | **Phase 4: RAG 编排层** | [████████████] 100% | 2 | 2/2 |
-| **Phase 5: 业务服务层** | [████████░░] 60% | 5 | 3/5 |
+| **Phase 5: 业务服务层** | [██████████] 80% | 5 | 4/5 |
 | **Phase 6: API 与组装层** | [░░░░░░░░░░] 0% | 2 | 0/2 |
 | **Phase 7: 异步任务定义** | [░░░░░░░░░░] 0% | 1 | 0/1 |
 | **Phase 8: 前端开发** | [░░░░░░░░░░] 0% | 1 | 0/1 |
@@ -50,7 +50,7 @@
 | M17 | 用户服务 | [module-user-service.md](module-user-service.md) | Phase 5 | ✅ 已完成 | P0 |
 | M18 | 数据集服务 | [module-dataset-service.md](module-dataset-service.md) | Phase 5 | ✅ 已完成 | P0 |
 | M19 | 文档服务 | [module-document-service.md](module-document-service.md) | Phase 5 | ✅ 已完成 | P0 |
-| M20 | 对话服务 | [module-conversation-service.md](module-conversation-service.md) | Phase 5 | 🔲 未开始 | P0 |
+| M20 | 对话服务 | [module-conversation-service.md](module-conversation-service.md) | Phase 5 | ✅ 已完成 | P0 |
 | M21 | 管理后台服务 | [module-admin-service.md](module-admin-service.md) | Phase 5 | 🔲 未开始 | P1 |
 | M22 | API 路由 | [module-api-routes.md](module-api-routes.md) | Phase 6 | 🔲 未开始 | P0 |
 | M23 | DI 容器 | [module-container.md](module-container.md) | Phase 6 | 🔲 未开始 | P0 |

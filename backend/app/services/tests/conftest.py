@@ -10,6 +10,7 @@ from unittest.mock import AsyncMock, MagicMock
 from app.config.settings import Settings
 from app.core.database import DatabaseManager
 from app.core.security import SecurityManager
+from app.services.conversation_service import ConversationService
 from app.services.dataset_service import DatasetService
 from app.services.document_service import DocumentService
 from app.services.user_service import UserService
@@ -185,5 +186,46 @@ async def sample_document(
         dataset_id=sample_dataset.id,
         filename="test_document.pdf",
         content=b"%PDF-1.4 mock pdf content",
+    )
+
+
+# ════════════════════════════════════════════════════════════
+# 对话服务 Mock 依赖
+# ════════════════════════════════════════════════════════════
+
+
+@pytest.fixture(scope="function")
+def mock_rag_engine() -> MagicMock:
+    """返回模拟的 RAGEngine"""
+    engine = MagicMock(spec=["query", "query_stream"])
+    engine.query = AsyncMock(
+        return_value={"answer": "测试回答", "sources": []}
+    )
+    return engine
+
+
+@pytest.fixture(scope="function")
+def conversation_service(
+    db_manager: DatabaseManager,
+    mock_rag_engine: MagicMock,
+) -> ConversationService:
+    """返回测试用的 ConversationService 实例"""
+    return ConversationService(db=db_manager, rag_engine=mock_rag_engine)
+
+
+@pytest.fixture(scope="function")
+async def sample_conversation(
+    conversation_service: ConversationService,
+    sample_user: dict,
+):
+    """预先创建一个测试对话，返回 ConversationResponse"""
+    from app.schemas.conversation import ConversationCreateRequest
+
+    request = ConversationCreateRequest(
+        title="测试对话",
+        dataset_id=None,
+    )
+    return await conversation_service.create_conversation(
+        request, user_id=sample_user["id"]
     )
 

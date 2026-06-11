@@ -1,5 +1,10 @@
 """业务服务模块 — 所有业务逻辑封装在此层"""
 
+from .conversation_service import (
+    ConversationNotFound,
+    ConversationService,
+    ConversationServiceError,
+)
 from .dataset_service import (
     DatasetNotFound,
     DatasetPermissionDenied,
@@ -39,4 +44,8 @@ __all__ = [
     "DocumentNotFound",
     "DocumentPermissionDenied",
     "UnsupportedFileType",
+    # Conversation
+    "ConversationService",
+    "ConversationServiceError",
+    "ConversationNotFound",
 ]
