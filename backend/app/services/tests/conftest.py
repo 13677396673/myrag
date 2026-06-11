@@ -1,14 +1,17 @@
-"""用户服务 + 数据集服务测试夹具"""
+"""用户服务 + 数据集服务 + 文档服务测试夹具"""
 
 import os
 import tempfile
 
 import pytest
 
+from unittest.mock import AsyncMock, MagicMock
+
 from app.config.settings import Settings
 from app.core.database import DatabaseManager
 from app.core.security import SecurityManager
 from app.services.dataset_service import DatasetService
+from app.services.document_service import DocumentService
 from app.services.user_service import UserService
 
 
@@ -119,4 +122,68 @@ async def sample_dataset(
         description="这是一个测试数据集",
     )
     return await dataset_service.create(request, user_id=sample_user["id"])
+
+
+# ════════════════════════════════════════════════════════════
+# 文档服务 Mock 依赖
+# ════════════════════════════════════════════════════════════
+
+
+@pytest.fixture(scope="function")
+def mock_storage() -> MagicMock:
+    """返回模拟的 FileStorageBackend"""
+    storage = MagicMock(spec=["save", "read", "delete", "exists"])
+    storage.save = AsyncMock(return_value="/mock/path/test.txt")
+    storage.read = AsyncMock(return_value=b"mock content")
+    storage.delete = AsyncMock(return_value=True)
+    storage.exists = AsyncMock(return_value=True)
+    return storage
+
+
+@pytest.fixture(scope="function")
+def mock_task_queue() -> MagicMock:
+    """返回模拟的 TaskQueueBackend"""
+    queue = MagicMock(spec=["register_task", "enqueue", "enqueue_with_delay"])
+    queue.enqueue = MagicMock(return_value="task-id-123")
+    queue.enqueue_with_delay = MagicMock(return_value="task-id-456")
+    return queue
+
+
+@pytest.fixture(scope="function")
+def mock_pipeline() -> MagicMock:
+    """返回模拟的 DocumentPipeline"""
+    pipeline = MagicMock(spec=["process_document"])
+    pipeline.process_document = MagicMock(return_value=10)
+    return pipeline
+
+
+@pytest.fixture(scope="function")
+def document_service(
+    db_manager: DatabaseManager,
+    mock_storage: MagicMock,
+    mock_task_queue: MagicMock,
+    mock_pipeline: MagicMock,
+) -> DocumentService:
+    """返回测试用的 DocumentService 实例"""
+    return DocumentService(
+        db=db_manager,
+        storage=mock_storage,
+        task_queue=mock_task_queue,
+        pipeline=mock_pipeline,
+    )
+
+
+@pytest.fixture(scope="function")
+async def sample_document(
+    document_service: DocumentService,
+    sample_user: dict,
+    sample_dataset,
+):
+    """预先创建一个测试文档，返回 DocumentResponse"""
+    return await document_service.upload_document(
+        user_id=sample_user["id"],
+        dataset_id=sample_dataset.id,
+        filename="test_document.pdf",
+        content=b"%PDF-1.4 mock pdf content",
+    )
 

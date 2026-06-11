@@ -6,6 +6,13 @@ from .dataset_service import (
     DatasetService,
     DatasetServiceError,
 )
+from .document_service import (
+    DocumentNotFound,
+    DocumentPermissionDenied,
+    DocumentService,
+    DocumentServiceError,
+    UnsupportedFileType,
+)
 from .user_service import (
     UserAlreadyExists,
     UserInactive,
@@ -26,4 +33,10 @@ __all__ = [
     "DatasetServiceError",
     "DatasetNotFound",
     "DatasetPermissionDenied",
+    # Document
+    "DocumentService",
+    "DocumentServiceError",
+    "DocumentNotFound",
+    "DocumentPermissionDenied",
+    "UnsupportedFileType",
 ]
