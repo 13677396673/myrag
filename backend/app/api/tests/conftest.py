@@ -14,7 +14,7 @@ import pytest
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
 
-from app.api.deps import Container, get_current_user_id
+from app.core.container import Container
 from app.api.errors import register_exception_handlers
 from app.api.v1 import v1_router
 from app.schemas.admin import SystemStatsResponse
