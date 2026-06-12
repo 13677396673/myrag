@@ -10,6 +10,7 @@ from unittest.mock import AsyncMock, MagicMock
 from app.config.settings import Settings
 from app.core.database import DatabaseManager
 from app.core.security import SecurityManager
+from app.services.admin_service import AdminService
 from app.services.conversation_service import ConversationService
 from app.services.dataset_service import DatasetService
 from app.services.document_service import DocumentService
@@ -62,6 +63,12 @@ def user_service(
 ) -> UserService:
     """返回测试用的 UserService 实例"""
     return UserService(db=db_manager, security=security)
+
+
+@pytest.fixture(scope="function")
+def admin_service(db_manager: DatabaseManager) -> AdminService:
+    """返回测试用的 AdminService 实例"""
+    return AdminService(db=db_manager)
 
 
 @pytest.fixture(scope="function")

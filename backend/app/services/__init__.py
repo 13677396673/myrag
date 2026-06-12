@@ -1,5 +1,6 @@
 """业务服务模块 — 所有业务逻辑封装在此层"""
 
+from .admin_service import AdminService, AdminServiceError
 from .conversation_service import (
     ConversationNotFound,
     ConversationService,
@@ -48,4 +49,7 @@ __all__ = [
     "ConversationService",
     "ConversationServiceError",
     "ConversationNotFound",
+    # Admin
+    "AdminService",
+    "AdminServiceError",
 ]
