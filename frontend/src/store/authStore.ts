@@ -24,7 +24,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   setAuth: (user, token) => {
     localStorage.setItem('accessToken', token);
     localStorage.setItem('user', JSON.stringify(user));
-    set({ user, token });
+    set({ user, token, initialized: true });
   },
 
   logout: () => {
@@ -43,9 +43,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const user = await authApi.getMe();
       set({ user, token, initialized: true });
     } catch {
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('user');
-      set({ initialized: true });
+      // token 清除由 axios 401 拦截器处理（硬跳转 /login）
+      // 网络错误等非 401 场景保留 token，避免一刷新就被踢回登录页
+      set({ user: null, initialized: true });
     }
   },
 

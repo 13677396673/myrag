@@ -52,7 +52,8 @@ export async function parseSSEStream(
               onChunk?.(event.content);
               break;
             case 'source':
-              onSources?.(event.sources);
+            case 'sources':
+              onSources?.(event.sources ?? event.content);
               break;
             case 'error':
               onError?.(event.message);

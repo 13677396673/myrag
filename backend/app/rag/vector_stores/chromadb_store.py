@@ -54,6 +54,7 @@ class ChromaDBStore(VectorStore):
         ids: List[str],
         vectors: List[List[float]],
         metadatas: List[Dict[str, Any]],
+        documents: Optional[List[str]] = None,
     ) -> None:
         """添加向量及其元数据
 
@@ -64,6 +65,7 @@ class ChromaDBStore(VectorStore):
             ids: 向量 ID 列表
             vectors: 向量数据列表
             metadatas: 元数据字典列表
+            documents: 可选的原始文本列表，与 ids/vectors 一一对应
         """
         sanitized = []
         for m in metadatas:
@@ -71,11 +73,14 @@ class ChromaDBStore(VectorStore):
                 k: (str(v) if isinstance(v, (dict, list)) else v)
                 for k, v in m.items()
             })
-        self._collection.add(
-            ids=ids,
-            embeddings=vectors,
-            metadatas=sanitized,
-        )
+        kwargs: Dict[str, Any] = {
+            "ids": ids,
+            "embeddings": vectors,
+            "metadatas": sanitized,
+        }
+        if documents is not None:
+            kwargs["documents"] = documents
+        self._collection.add(**kwargs)
 
     def search(
         self,
@@ -105,6 +110,7 @@ class ChromaDBStore(VectorStore):
         for i in range(len(results["ids"][0])):
             items.append(SearchResult(
                 id=results["ids"][0][i],
+                content=results["documents"][0][i] if results.get("documents") else None,
                 score=results["distances"][0][i] if results.get("distances") else 0.0,
                 metadata=results["metadatas"][0][i] if results.get("metadatas") else {},
             ))

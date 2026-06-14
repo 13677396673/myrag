@@ -3,7 +3,7 @@ import type { Document } from '../types';
 
 export const documentsApi = {
   list(datasetId: string): Promise<Document[]> {
-    return client.get(`/datasets/${datasetId}/documents`).then((r) => r.data);
+    return client.get(`/datasets/${datasetId}/documents`).then((r) => r.data.items ?? r.data);
   },
 
   upload(datasetId: string, file: File, onProgress?: (percent: number) => void): Promise<Document> {

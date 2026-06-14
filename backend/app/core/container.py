@@ -39,6 +39,7 @@ from app.services.conversation_service import ConversationService
 from app.services.dataset_service import DatasetService
 from app.services.document_service import DocumentService
 from app.services.user_service import UserService
+from app.tasks import register_tasks as register_task_queue_tasks
 
 
 class Container:
@@ -158,6 +159,7 @@ class Container:
         """任务队列后端（由配置驱动）"""
         if self._task_queue is None:
             self._task_queue = self._create_task_queue()
+            register_task_queue_tasks(self._task_queue)
         return self._task_queue
 
     # ════════════════════════════════════════════════════════════
@@ -385,7 +387,7 @@ class Container:
         backend = self._settings.TASK_QUEUE_BACKEND
 
         if backend == "huey":
-            return HueyTaskQueue()
+            return HueyTaskQueue(immediate=True)
 
         if backend in ("celery", "arq"):
             raise NotImplementedError(

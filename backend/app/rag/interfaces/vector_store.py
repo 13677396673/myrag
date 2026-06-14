@@ -21,6 +21,7 @@ class VectorStore(ABC):
         ids: List[str],
         vectors: List[List[float]],
         metadatas: List[Dict[str, Any]],
+        documents: Optional[List[str]] = None,
     ) -> None:
         """
         添加向量及其元数据到存储。
@@ -29,6 +30,7 @@ class VectorStore(ABC):
             ids: 向量 ID 列表
             vectors: 向量数据列表
             metadatas: 元数据字典列表，与 ids/vectors 一一对应
+            documents: 可选的原始文本列表，与 ids/vectors 一一对应
         """
         ...
 

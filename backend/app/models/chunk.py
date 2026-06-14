@@ -16,7 +16,7 @@ class Chunk(Base, TimestampMixin):
 
     __tablename__ = "chunks"
 
-    id = Column(String(36), primary_key=True, default=generate_uuid)
+    id = Column(String(255), primary_key=True, default=generate_uuid)
     document_id = Column(
         String(36), ForeignKey("documents.id"), nullable=False, index=True
     )

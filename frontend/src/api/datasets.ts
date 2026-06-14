@@ -3,7 +3,7 @@ import type { Dataset, CreateDatasetRequest } from '../types';
 
 export const datasetsApi = {
   list(): Promise<Dataset[]> {
-    return client.get('/datasets').then((r) => r.data);
+    return client.get('/datasets').then((r) => r.data.items ?? r.data);
   },
 
   get(id: string): Promise<Dataset> {

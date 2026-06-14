@@ -123,6 +123,11 @@ async def delete_document(
         await container.document_service.delete_document(
             document_id, user_id=user_id
         )
+        # 清理 ChromaDB 中该文档的所有切片
+        try:
+            container.vector_store.delete_by_metadata({"document_id": document_id})
+        except Exception:
+            pass  # 向量库清理失败不影响主流程
         return ApiResponse(code=200, message="文档已删除")
     except DocumentNotFound as e:
         raise HTTPException(

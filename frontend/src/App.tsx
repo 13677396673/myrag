@@ -5,6 +5,7 @@ import {
   Route,
   Navigate,
   Outlet,
+  useNavigate,
 } from 'react-router-dom';
 import { ConfigProvider, Spin, theme } from 'antd';
 import zhCN from 'antd/locale/zh_CN';
@@ -83,6 +84,19 @@ const PublicRoute: React.FC = () => {
   return <Outlet />;
 };
 
+/** 监听 auth:unauthorized 事件，软导航到登录页 */
+const AuthWatcher: React.FC = () => {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const handler = () => navigate('/login', { replace: true });
+    window.addEventListener('auth:unauthorized', handler);
+    return () => window.removeEventListener('auth:unauthorized', handler);
+  }, [navigate]);
+
+  return null;
+};
+
 const App: React.FC = () => {
   const initialize = useAuthStore((s) => s.initialize);
 
@@ -102,6 +116,7 @@ const App: React.FC = () => {
       }}
     >
       <BrowserRouter>
+        <AuthWatcher />
         <Routes>
           {/* 公开路由（未登录） */}
           <Route element={<PublicRoute />}>

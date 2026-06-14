@@ -13,6 +13,7 @@ ConversationService 封装了所有与对话相关的业务逻辑：
 
 from typing import Any, AsyncIterator, Dict, List, Optional
 
+import os as _os
 from sqlalchemy import desc, func, select
 
 from app.core.database import DatabaseManager
@@ -453,18 +454,43 @@ class ConversationService:
                     )
                     await session.commit()
 
-        # ── Step 8: yield sources ──
-        citations = [
-            SourceCitation(
-                chunk_id=src.id,
-                content=src.content or "",
-                document_name=src.metadata.get("document_name", "")
-                if src.metadata
-                else "",
-                score=src.score,
+        # ── Step 8: yield sources（含 SQL Chunk 表兜底） ──
+        citations: List[SourceCitation] = []
+        for src in raw_sources:
+            content = src.content or (src.metadata.get("content", "") if src.metadata else "")
+            doc_name = src.metadata.get("document_name", "") or (
+                _os.path.basename(src.metadata.get("source", "")) if src.metadata else ""
             )
-            for src in raw_sources
-        ]
+
+            # 如果 ChromaDB 没有 content，从 SQL Chunk 表兜底
+            if not content and src.id:
+                try:
+                    doc_id_from_chunk, idx_str = src.id.rsplit("_", 1)
+                    from app.models.chunk import Chunk as ChunkModel
+                    async with self._db.get_session() as s:
+                        row = await s.execute(
+                            select(ChunkModel).where(
+                                ChunkModel.document_id == doc_id_from_chunk,
+                                ChunkModel.chunk_index == int(idx_str),
+                            )
+                        )
+                        chunk_record = row.scalar_one_or_none()
+                        if chunk_record:
+                            content = chunk_record.content or ""
+                            if not doc_name:
+                                doc_name = (
+                                    chunk_record.meta_data.get("document_name", "")
+                                    if chunk_record.meta_data else ""
+                                )
+                except (ValueError, IndexError):
+                    pass  # chunk_id 格式不符，跳过
+
+            citations.append(SourceCitation(
+                chunk_id=src.id,
+                content=content,
+                document_name=doc_name,
+                score=src.score,
+            ))
         yield {"type": "sources", "content": [c.model_dump() for c in citations]}
 
         # ── Step 9: yield done ──

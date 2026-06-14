@@ -9,7 +9,13 @@
     uvicorn app.main:app --reload
 """
 
+import sys
+from pathlib import Path
+
 import uvicorn
+
+# 将脚本所在目录加入 sys.path，确保从任意工作目录都能找到 app 模块
+sys.path.insert(0, str(Path(__file__).parent))
 
 from app.main import app
 

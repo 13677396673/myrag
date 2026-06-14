@@ -31,7 +31,7 @@
 """
 
 import os
-from typing import List
+from typing import List, Optional
 
 from app.rag.interfaces.parser import ParsedDocument, DocumentParser
 from app.rag.interfaces.splitter import TextSplitter, DocumentChunk
@@ -63,6 +63,8 @@ class DocumentPipeline:
         self._splitter = splitter
         self._embedding = embedding
         self._vector_store = vector_store
+        # 最后一次 process_document 的切片数据，供外部保存到 SQL
+        self.last_chunks: List[DocumentChunk] = []
 
     def process_document(
         self,
@@ -70,6 +72,7 @@ class DocumentPipeline:
         document_id: str,
         user_id: str,
         dataset_id: str,
+        filename: Optional[str] = None,
     ) -> int:
         """处理单个文档：解析 → 切片 → Embedding → 存储
 
@@ -78,7 +81,7 @@ class DocumentPipeline:
             Step 2: ``parser.parse(file_path)`` → 结构化文档
             Step 3: ``splitter.split(content, metadata)`` → 切片列表
             Step 4: ``embedding.embed_documents(texts)`` → 向量列表
-            Step 5: ``vector_store.add_embeddings(ids, vectors, metadatas)``
+            Step 5: ``vector_store.add_embeddings(ids, vectors, metadatas, documents)``
             Step 6: 返回切片数量
 
         参数:
@@ -86,6 +89,7 @@ class DocumentPipeline:
             document_id: 文档唯一标识
             user_id: 所属用户 ID
             dataset_id: 所属数据集 ID
+            filename: 原始文件名（显示用），不传则从 file_path 提取 basename
 
         返回:
             生成的切片数量
@@ -119,6 +123,7 @@ class DocumentPipeline:
             "user_id": user_id,
             "dataset_id": dataset_id,
             "source": file_path,
+            "document_name": filename or os.path.basename(file_path),
         }
         # 合并解析器提取的元数据（如 title, author, total_pages）
         doc_metadata.update(parsed.metadata)
@@ -129,6 +134,7 @@ class DocumentPipeline:
         )
 
         if not chunks:
+            self.last_chunks = []
             return 0
 
         # === Step 4: Embedding ===
@@ -146,13 +152,18 @@ class DocumentPipeline:
             # 合并 chunk 级别的元数据
             chunk_metadata = dict(chunk.metadata)
             chunk_metadata["chunk_index"] = chunk.chunk_index
+            chunk_metadata["content"] = chunk.content  # 文本内容也存到 metadata，兼容所有 ChromaDB 版本
             metadatas.append(chunk_metadata)
 
         self._vector_store.add_embeddings(
             ids=ids,
             vectors=vectors,
             metadatas=metadatas,
+            documents=texts,
         )
+
+        # 保留切片数据，供外部保存到 SQL Chunk 表
+        self.last_chunks = chunks
 
         # === Step 6: 返回切片数量 ===
         return len(chunks)

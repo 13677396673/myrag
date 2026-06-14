@@ -4,6 +4,8 @@
 所有配置项集中在此类中管理，其他模块通过全局单例 `settings` 访问。
 """
 
+import os
+from pathlib import Path
 from typing import Optional, Literal
 
 from pydantic import Field, field_validator
@@ -14,7 +16,7 @@ class Settings(BaseSettings):
     """应用配置，环境变量优先级 > .env > config.yaml 默认值"""
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=Path(__file__).resolve().parent.parent.parent / ".env",
         env_file_encoding="utf-8",
         extra="ignore",
     )
@@ -82,6 +84,12 @@ class Settings(BaseSettings):
     EMBEDDING_OPENAI_MODEL: str = "text-embedding-3-small"
     EMBEDDING_DEEPSEEK_MODEL: str = "deepseek-embedding"
 
+    # ── HuggingFace 镜像（国内访问加速） ──
+    HF_ENDPOINT: Optional[str] = Field(
+        default=None,
+        description="HuggingFace 镜像地址，如 https://hf-mirror.com",
+    )
+
     # ── 向量数据库配置 ──
     VECTOR_STORE_BACKEND: Literal["chromadb", "faiss", "milvus", "pgvector"] = "chromadb"
     VECTOR_STORE_CHROMA_PATH: str = "./data/chromadb"
@@ -103,6 +111,15 @@ class Settings(BaseSettings):
     # ── LLM 生成配置 ──
     LLM_TEMPERATURE: float = 0.7
     LLM_MAX_TOKENS: int = 2048
+
+    # ════════════════════════════════════════════════════════
+    # 模型初始化后处理
+    # ════════════════════════════════════════════════════════
+
+    def model_post_init(self, __context) -> None:
+        """将 HF_ENDPOINT 导出到系统环境变量，供 sentence-transformers 使用"""
+        if self.HF_ENDPOINT:
+            os.environ["HF_ENDPOINT"] = self.HF_ENDPOINT
 
     # ════════════════════════════════════════════════════════
     # 验证规则

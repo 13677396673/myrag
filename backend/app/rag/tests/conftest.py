@@ -91,10 +91,11 @@ class MockVectorStore(VectorStore):
         self.added_vectors = None
         self.added_metadatas = None
 
-    def add_embeddings(self, ids, vectors, metadatas):
+    def add_embeddings(self, ids, vectors, metadatas, documents=None):
         self.added_ids = ids
         self.added_vectors = vectors
         self.added_metadatas = metadatas
+        self.added_documents = documents
 
     def search(self, query_vector, top_k=5, filter_conditions=None):
         return []

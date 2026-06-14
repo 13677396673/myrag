@@ -71,9 +71,13 @@ class MockVectorStore(VectorStore):
     def __init__(self):
         self._data: dict = {}
 
-    def add_embeddings(self, ids, vectors, metadatas):
+    def add_embeddings(self, ids, vectors, metadatas, documents=None):
         for i, id_ in enumerate(ids):
-            self._data[id_] = {"vector": vectors[i], "metadata": metadatas[i]}
+            self._data[id_] = {
+                "vector": vectors[i],
+                "metadata": metadatas[i],
+                "document": documents[i] if documents else None,
+            }
 
     def search(self, query_vector, top_k=5, filter_conditions=None):
         results = []
@@ -88,6 +92,7 @@ class MockVectorStore(VectorStore):
             results.append(SearchResult(
                 id=id_,
                 score=0.9,
+                content=item.get("document"),
                 metadata=item["metadata"],
             ))
         return sorted(results, key=lambda r: r.score, reverse=True)[:top_k]

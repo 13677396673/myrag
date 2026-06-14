@@ -8,7 +8,7 @@ import type {
 
 export const conversationsApi = {
   list(): Promise<Conversation[]> {
-    return client.get('/conversations').then((r) => r.data);
+    return client.get('/conversations').then((r) => r.data.items ?? r.data);
   },
 
   get(id: string): Promise<Conversation> {
@@ -24,7 +24,7 @@ export const conversationsApi = {
   },
 
   getMessages(id: string): Promise<Message[]> {
-    return client.get(`/conversations/${id}/messages`).then((r) => r.data);
+    return client.get(`/conversations/${id}/messages`).then((r) => r.data.items ?? r.data);
   },
 
   /** 发送消息并返回 SSE 响应 URL（用于 EventSource / fetch 流式读取） */

@@ -19,6 +19,7 @@ const LoginPage: React.FC = () => {
     try {
       await login(values.username, values.password);
       message.success('登录成功！');
+      console.log("这里被执行了");
       navigate('/datasets');
     } catch (err: any) {
       message.error(err.message || '登录失败，请检查用户名和密码');

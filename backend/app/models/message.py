@@ -47,7 +47,7 @@ class MessageChunk(Base, TimestampMixin):
         String(36), ForeignKey("messages.id"), nullable=False, index=True
     )
     chunk_id = Column(
-        String(36), ForeignKey("chunks.id"), nullable=False, index=True
+        String(255), ForeignKey("chunks.id"), nullable=False, index=True
     )
     relevance_score = Column(Float, nullable=False)
 
