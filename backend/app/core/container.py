@@ -95,7 +95,9 @@ class Container:
     async def initialize(self) -> None:
         """初始化基础设施组件
 
-        执行 DatabaseManager 的异步初始化（创建引擎和连接池）和建表。
+        执行 DatabaseManager 的异步初始化（创建引擎和连接池）和建表，并预加载
+        Embedding 模型（如 BGE 本地模型），确保启动完成前所有组件就绪。
+
         此方法应在应用启动时调用一次。
         """
         if self._initialized:
@@ -105,6 +107,11 @@ class Container:
         self._database = DatabaseManager(self._settings)
         await self._database.initialize()
         await self._database.create_tables()
+
+        # 预加载 Embedding 模型（BGE 本地模型会阻塞直到加载完成）
+        emb = self.embedding
+        if hasattr(emb, "load"):
+            await emb.load()
 
         self._initialized = True
 

@@ -11,6 +11,7 @@
 
 import os
 import tempfile
+from unittest.mock import patch
 
 import pytest
 
@@ -20,6 +21,22 @@ from app.core.security import SecurityManager
 from app.core.storage import LocalFileStorage
 from app.core.task_queue.huey_queue import HueyTaskQueue
 from app.rag.splitters import FixedSizeSplitter
+
+
+# ════════════════════════════════════════════════════════════
+# 全局 Mock
+# ════════════════════════════════════════════════════════════
+
+
+@pytest.fixture(autouse=True)
+def _mock_embedding_model():
+    """全局 Mock SentenceTransformer，避免容器初始化时下载/加载真实 BGE 模型
+
+    Container.initialize() 现在会主动加载 embedding 模型，
+    测试无需依赖真实模型，因此全程 mock。
+    """
+    with patch("sentence_transformers.SentenceTransformer"):
+        yield
 
 
 # ════════════════════════════════════════════════════════════

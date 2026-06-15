@@ -29,7 +29,8 @@ class Chunk(Base, TimestampMixin):
 
     # 关系
     message_links = relationship(
-        "MessageChunk", backref="chunk", lazy="dynamic"
+        "MessageChunk", backref="chunk", lazy="dynamic",
+        cascade="all, delete-orphan",
     )
 
     def __repr__(self) -> str:

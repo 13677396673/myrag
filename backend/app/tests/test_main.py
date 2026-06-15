@@ -10,6 +10,7 @@
 
 import os
 import tempfile
+from unittest.mock import patch
 
 import pytest
 from fastapi import FastAPI
@@ -19,6 +20,18 @@ from httpx import ASGITransport, AsyncClient
 from app.config.settings import Settings
 from app.core.container import Container
 from app.main import create_app
+
+
+# ════════════════════════════════════════════════════════════
+# 全局 Mock
+# ════════════════════════════════════════════════════════════
+
+
+@pytest.fixture(autouse=True)
+def _mock_embedding_model():
+    """全局 Mock SentenceTransformer，避免启动时加载真实 BGE 模型"""
+    with patch("sentence_transformers.SentenceTransformer"):
+        yield
 
 
 # ════════════════════════════════════════════════════════════
