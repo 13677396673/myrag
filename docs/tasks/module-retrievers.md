@@ -35,11 +35,14 @@
 ### 3. HybridRetriever（Phase 9 新增）
 
 - [x] `backend/app/rag/retrievers/hybrid_retriever.py`
-  - [x] `__init__(vector_retriever, bm25_retriever, top_k, rrf_k)`
+  - [x] `__init__(vector_retriever, bm25_retriever, top_k, vector_weight=0.7, keyword_weight=0.3)`
   - [x] 内部持有 `VectorRetriever` + `BM25Retriever` 两路检索器
-  - [x] `retrieve(query, top_k, filter_conditions)` — RRF 融合
-  - [x] RRF 公式：`score(d) = Σ 1 / (k + rank_s(d))`，默认 k=60
+  - [x] `retrieve(query, top_k, filter_conditions)` — 加权线性融合
+  - [x] 加权公式：`score = vector_weight × vector_sim + keyword_weight × bm25_norm`
+  - [x] 向量距离 → 相似度转换：`max(0, 1 - dist/2)`
+  - [x] BM25 min-max 归一化到 [0, 1]
   - [x] 从两路各取 `top_k * 3` 候选，融合后取 top_k
+  - [x] 归一化后分数范围 [0, 1]，前端可直接用 `(score*100).toFixed(0)%` 显示
 
 ### 4. create_retriever 工厂函数
 
@@ -65,8 +68,8 @@
   - [x] 空语料库安全处理
 - [x] 创建 `backend/app/rag/retrievers/tests/test_hybrid_retriever.py`
   - [x] 两路检索器调用验证
-  - [x] RRF 融合排序（共同出现的文档排名更高）
-  - [x] RRF 分数计算正确性
+  - [x] 加权融合排序（共同出现的文档排名更高）
+  - [x] 加权分数计算正确性（精确验证 0.7/0.3 权重）
   - [x] filter_conditions 透传
   - [x] 任意一路为空
 
