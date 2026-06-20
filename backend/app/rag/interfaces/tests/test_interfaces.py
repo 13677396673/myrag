@@ -43,7 +43,7 @@ class MockDocumentParser(DocumentParser):
 class MockTextSplitter(TextSplitter):
     """TextSplitter 的 Mock 实现"""
 
-    def split(self, text: str, metadata: dict = None) -> List[DocumentChunk]:
+    def split(self, text: str, metadata: dict = None, sections: list = None) -> List[DocumentChunk]:
         return [DocumentChunk(content=text, chunk_index=0, metadata=metadata or {})]
 
     @property

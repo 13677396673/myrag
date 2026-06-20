@@ -2,12 +2,13 @@
 M15: DocumentPipeline 单元测试
 
 测试内容：
-1. 完整流程：解析 → 切片 → Embedding → 存储
+1. 完整流程：解析 → 切片 → Embedding → 存储（通过策略路由）
 2. 验证调用顺序正确
 3. 不支持的文件格式 → 抛出 ValueError
 4. 空文档 → 返回 0
 5. chunk ID 格式正确
 6. 元数据传递正确
+7. sections 透传到 splitter
 """
 
 import pytest
@@ -23,8 +24,7 @@ class TestDocumentPipeline:
     def test_init(self, pipeline):
         """测试初始化"""
         assert isinstance(pipeline, DocumentPipeline)
-        assert pipeline.parser_router is not None
-        assert pipeline.splitter is not None
+        assert pipeline.strategy_router is not None
         assert pipeline.embedding is not None
         assert pipeline.vector_store is not None
 
@@ -67,6 +67,17 @@ class TestDocumentPipeline:
         assert chunk_count == 3
         assert mock_vector_store.added_ids[0] == "doc-002_0"
 
+    def test_process_document_pdf_extension(self, pipeline, mock_vector_store):
+        """测试 .pdf 文件也能正常处理"""
+        chunk_count = pipeline.process_document(
+            file_path="/path/to/doc.pdf",
+            document_id="doc-003",
+            user_id="user-1",
+            dataset_id="ds-001",
+        )
+        assert chunk_count == 3
+        assert mock_vector_store.added_ids[0] == "doc-003_0"
+
     # ── 调用顺序 ──
 
     def test_pipeline_steps_executed_in_order(
@@ -74,27 +85,33 @@ class TestDocumentPipeline:
     ):
         """验证各步骤按正确顺序执行"""
         from unittest.mock import MagicMock
+        from app.rag.strategies import StrategyRouter, ChunkingStrategy
         from app.rag.interfaces.parser import ParsedDocument
 
-        # 使用 MagicMock 代替真实 router，避免 get_parser 创建新实例
+        # 使用 MagicMock 代替真实 parser 以追踪调用
         mock_parser = MagicMock()
         mock_parser.parse.return_value = ParsedDocument(content="测试内容")
 
-        mock_router = MagicMock()
-        mock_router.get_parser.return_value = mock_parser
-        mock_router.get_supported_extensions.return_value = [".txt"]
+        # Mock strategy
+        mock_strategy = ChunkingStrategy(
+            name="mock",
+            parser=mock_parser,
+            splitter=mock_splitter,
+        )
 
-        # 可追踪的 splitter
+        router = StrategyRouter()
+        router.register([".txt"], mock_strategy)
+
+        # 追踪调用
         tracker = []
         original_split = mock_splitter.split
 
-        def tracking_split(text, metadata=None):
+        def tracking_split(text, metadata=None, sections=None):
             tracker.append("split")
-            return original_split(text, metadata)
+            return original_split(text, metadata, sections)
 
         mock_splitter.split = tracking_split
 
-        # 可追踪的 embedding
         original_embed = mock_embedding.embed_documents
 
         def tracking_embed(texts):
@@ -104,15 +121,14 @@ class TestDocumentPipeline:
         mock_embedding.embed_documents = tracking_embed
 
         pipeline = DocumentPipeline(
-            parser_router=mock_router,
-            splitter=mock_splitter,
+            strategy_router=router,
             embedding=mock_embedding,
             vector_store=mock_vector_store,
         )
 
         pipeline.process_document(
             file_path="/path/to/doc.txt",
-            document_id="doc-003",
+            document_id="doc-004",
             user_id="user-1",
             dataset_id="ds-001",
         )
@@ -149,19 +165,19 @@ class TestDocumentPipeline:
     def test_empty_document_returns_zero(self, mock_vector_store, mock_embedding, mock_splitter):
         """测试空文档返回 0"""
         from unittest.mock import MagicMock
+        from app.rag.strategies import StrategyRouter, ChunkingStrategy
         from app.rag.interfaces.parser import ParsedDocument
 
-        # 使用 MagicMock router 返回空文档解析器
+        # Mock parser 返回空内容
         mock_parser = MagicMock()
         mock_parser.parse.return_value = ParsedDocument(content="   ")
 
-        mock_router = MagicMock()
-        mock_router.get_parser.return_value = mock_parser
-        mock_router.get_supported_extensions.return_value = [".txt"]
+        strategy = ChunkingStrategy(name="mock", parser=mock_parser, splitter=mock_splitter)
+        router = StrategyRouter()
+        router.register([".txt"], strategy)
 
         empty_pipeline = DocumentPipeline(
-            parser_router=mock_router,
-            splitter=mock_splitter,
+            strategy_router=router,
             embedding=mock_embedding,
             vector_store=mock_vector_store,
         )
@@ -235,18 +251,66 @@ class TestDocumentPipeline:
         for i, metadata in enumerate(mock_vector_store.added_metadatas):
             assert metadata["chunk_index"] == i
 
-    # ── 边界条件 ──
+    # ── sections 透传 ──
 
-    def test_splitter_returns_empty_list(self, pipeline, mock_splitter_empty, parser_router, mock_vector_store):
-        """测试切片器返回空列表时返回 0"""
-        empty_split_pipeline = DocumentPipeline(
-            parser_router=parser_router,
-            splitter=mock_splitter_empty,
-            embedding=pipeline.embedding,
+    def test_sections_passed_to_splitter(self, mock_vector_store, mock_embedding):
+        """测试 parser 的 sections 被正确透传到 splitter"""
+        from app.rag.strategies import StrategyRouter, ChunkingStrategy
+        from app.rag.tests.conftest import MockParser, MockSplitter
+
+        sections = [
+            {"page": 1, "content": "第一页内容"},
+            {"page": 2, "content": "第二页内容"},
+        ]
+        parser = MockParser(
+            content="第一页内容\n\n第二页内容",
+            sections=sections,
+        )
+        splitter = MockSplitter(chunk_count=2)
+        strategy = ChunkingStrategy(name="pdf-test", parser=parser, splitter=splitter)
+
+        router = StrategyRouter()
+        router.register([".pdf"], strategy)
+
+        pipeline = DocumentPipeline(
+            strategy_router=router,
+            embedding=mock_embedding,
             vector_store=mock_vector_store,
         )
 
-        chunk_count = empty_split_pipeline.process_document(
+        pipeline.process_document(
+            file_path="/path/to/doc.pdf",
+            document_id="doc-010",
+            user_id="user-1",
+            dataset_id="ds-001",
+        )
+
+        # 验证 splitter 收到了 sections
+        assert splitter.last_sections is not None
+        assert len(splitter.last_sections) == 2
+        assert splitter.last_sections[0]["page"] == 1
+
+    # ── 边界条件 ──
+
+    def test_strategy_returns_empty_chunks(self, mock_parser_empty, mock_splitter_empty, mock_embedding, mock_vector_store):
+        """测试策略返回空切片列表时返回 0"""
+        from app.rag.strategies import StrategyRouter, ChunkingStrategy
+
+        empty_strategy = ChunkingStrategy(
+            name="empty",
+            parser=mock_parser_empty,
+            splitter=mock_splitter_empty,
+        )
+        router = StrategyRouter()
+        router.register([".txt"], empty_strategy)
+
+        pipeline = DocumentPipeline(
+            strategy_router=router,
+            embedding=mock_embedding,
+            vector_store=mock_vector_store,
+        )
+
+        chunk_count = pipeline.process_document(
             file_path="/path/to/doc.txt",
             document_id="doc-007",
             user_id="user-1",
@@ -268,13 +332,10 @@ class TestDocumentPipeline:
 
     # ── 属性 ──
 
-    def test_parser_router_property(self, pipeline):
-        """测试 parser_router 属性"""
-        assert hasattr(pipeline, "parser_router")
-
-    def test_splitter_property(self, pipeline):
-        """测试 splitter 属性"""
-        assert hasattr(pipeline, "splitter")
+    def test_strategy_router_property(self, pipeline):
+        """测试 strategy_router 属性"""
+        assert hasattr(pipeline, "strategy_router")
+        assert pipeline.strategy_router is not None
 
     def test_embedding_property(self, pipeline):
         """测试 embedding 属性"""

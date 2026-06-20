@@ -1,7 +1,7 @@
 """pytest fixtures for DocumentPipeline tests
 
-提供模拟的 ParserRouter、TextSplitter、EmbeddingBackend、VectorStore
-以及完整的 DocumentPipeline 实例。
+提供模拟的 StrategyRouter、ChunkingStrategy、TextSplitter、EmbeddingBackend、
+VectorStore 以及完整的 DocumentPipeline 实例。
 """
 
 from typing import List, Optional
@@ -15,7 +15,7 @@ from app.rag.interfaces.embedding import EmbeddingBackend
 from app.rag.interfaces.vector_store import VectorStore, SearchResult
 from app.rag.interfaces.llm import LLMBackend
 from app.rag.interfaces.retriever import Retriever
-from app.rag.parsers.parser_router import ParserRouter
+from app.rag.strategies import StrategyRouter, ChunkingStrategy
 from app.rag.pipeline import DocumentPipeline
 
 
@@ -27,16 +27,17 @@ from app.rag.pipeline import DocumentPipeline
 class MockParser(DocumentParser):
     """模拟解析器：解析后返回固定内容"""
 
-    def __init__(self, content: str = "模拟文档内容", metadata: Optional[dict] = None):
+    def __init__(self, content: str = "模拟文档内容", metadata: Optional[dict] = None, sections: Optional[List[dict]] = None):
         self._content = content
         self._metadata = metadata or {}
+        self._sections = sections or []
 
     def parse(self, file_path: str) -> ParsedDocument:
-        return ParsedDocument(content=self._content, metadata=self._metadata)
+        return ParsedDocument(content=self._content, metadata=self._metadata, sections=self._sections)
 
     @classmethod
     def supported_extensions(cls) -> List[str]:
-        return [".txt", ".md"]
+        return [".txt", ".md", ".pdf", ".docx"]
 
 
 class MockSplitter(TextSplitter):
@@ -46,10 +47,12 @@ class MockSplitter(TextSplitter):
         self._chunk_count = chunk_count
         self.last_text = None
         self.last_metadata = None
+        self.last_sections = None
 
-    def split(self, text: str, metadata: Optional[dict] = None) -> List[DocumentChunk]:
+    def split(self, text: str, metadata: Optional[dict] = None, sections: Optional[List[dict]] = None) -> List[DocumentChunk]:
         self.last_text = text
         self.last_metadata = metadata
+        self.last_sections = sections
         return [
             DocumentChunk(
                 content=f"切片 {i} 内容",
@@ -152,19 +155,28 @@ def mock_vector_store():
 
 
 @pytest.fixture
-def parser_router(mock_parser):
-    """返回一个注册了 MockParser 的 ParserRouter"""
-    router = ParserRouter()
-    router.register(MockParser)
+def strategy_router(mock_parser, mock_splitter):
+    """返回一个注册了 MockParser + MockSplitter 的 StrategyRouter
+
+    对 .txt / .md / .pdf / .docx 都注册同一个 mock 策略，
+    确保测试中所有扩展名都能被路由。
+    """
+    router = StrategyRouter()
+    strategy = ChunkingStrategy(
+        name="mock",
+        parser=mock_parser,
+        splitter=mock_splitter,
+        description="Mock 测试策略",
+    )
+    router.register([".txt", ".md", ".pdf", ".docx"], strategy)
     return router
 
 
 @pytest.fixture
-def pipeline(parser_router, mock_splitter, mock_embedding, mock_vector_store):
-    """返回一个完整的 DocumentPipeline 实例（所有组件均为 Mock）"""
+def pipeline(strategy_router, mock_embedding, mock_vector_store):
+    """返回一个完整的 DocumentPipeline 实例（使用 mock 策略路由）"""
     return DocumentPipeline(
-        parser_router=parser_router,
-        splitter=mock_splitter,
+        strategy_router=strategy_router,
         embedding=mock_embedding,
         vector_store=mock_vector_store,
     )

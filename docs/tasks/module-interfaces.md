@@ -25,7 +25,9 @@
 - [x] 创建 `backend/app/rag/interfaces/splitter.py`
   - [x] `DocumentChunk` dataclass — content、chunk_index、metadata
   - [x] `TextSplitter` 抽象类
-  - [x] `split(text: str, metadata: Optional[dict]) -> List[DocumentChunk]` 抽象方法
+  - [x] `split(text: str, metadata: Optional[dict], sections: Optional[List[dict]]) -> List[DocumentChunk]` 抽象方法
+    - [x] `sections` 参数为 v2 新增，用于结构感知切分
+    - [x] 不传 sections（或传 None）行为不变，向后兼容
   - [x] `type_name -> str` 抽象属性
 
 ### 3. EmbeddingBackend 接口

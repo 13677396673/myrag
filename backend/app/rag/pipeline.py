@@ -3,20 +3,22 @@
 将 Parser → Splitter → Embedding → VectorStore 四个步骤编排为
 一个完整的文档处理流水线。Pipeline 只负责编排，不包含任何实现细节。
 
+Pipeline 不再直接持有单一的 ParserRouter 和 Splitter，而是通过
+``StrategyRouter`` 根据文档类型自动选择对应的 (parser, splitter) 配对
+进行结构感知的切分。
+
 用法::
 
-    from app.rag.parsers import ParserRouter, register_default_parsers
-    from app.rag.splitters import FixedSizeSplitter
+    from app.rag.strategies import StrategyRouter, register_default_strategies
     from app.rag.embeddings import BGESmallEmbedding
     from app.rag.vector_stores import ChromaDBStore
     from app.rag.pipeline import DocumentPipeline
 
-    router = ParserRouter()
-    register_default_parsers(router)
+    router = StrategyRouter()
+    register_default_strategies(router)
 
     pipeline = DocumentPipeline(
-        parser_router=router,
-        splitter=FixedSizeSplitter(chunk_size=512),
+        strategy_router=router,
         embedding=BGESmallEmbedding(),
         vector_store=ChromaDBStore(persist_directory="./data/chromadb"),
     )
@@ -37,7 +39,7 @@ from app.rag.interfaces.parser import ParsedDocument, DocumentParser
 from app.rag.interfaces.splitter import TextSplitter, DocumentChunk
 from app.rag.interfaces.embedding import EmbeddingBackend
 from app.rag.interfaces.vector_store import VectorStore
-from app.rag.parsers.parser_router import ParserRouter
+from app.rag.strategies import StrategyRouter, ChunkingStrategy
 
 
 class DocumentPipeline:
@@ -45,22 +47,22 @@ class DocumentPipeline:
 
     将文档从原始文件处理为向量并存入向量数据库的完整编排流程。
 
+    通过 ``StrategyRouter`` 根据文档扩展名自动选择合适的
+    (parser, splitter) 配对，实现结构感知的智能切分。
+
     参数:
-        parser_router: 文档解析器路由，负责根据扩展名选择解析器
-        splitter: 文本切片器，将文档切分为可检索的片段
+        strategy_router: 文档 chunking 策略路由，根据扩展名选择策略
         embedding: Embedding 后端，将文本转为向量
         vector_store: 向量存储后端，保存向量及其元数据
     """
 
     def __init__(
         self,
-        parser_router: ParserRouter,
-        splitter: TextSplitter,
+        strategy_router: StrategyRouter,
         embedding: EmbeddingBackend,
         vector_store: VectorStore,
     ):
-        self._parser_router = parser_router
-        self._splitter = splitter
+        self._strategy_router = strategy_router
         self._embedding = embedding
         self._vector_store = vector_store
         # 最后一次 process_document 的切片数据，供外部保存到 SQL
@@ -77,12 +79,11 @@ class DocumentPipeline:
         """处理单个文档：解析 → 切片 → Embedding → 存储
 
         执行流程:
-            Step 1: 根据文件扩展名获取解析器
-            Step 2: ``parser.parse(file_path)`` → 结构化文档
-            Step 3: ``splitter.split(content, metadata)`` → 切片列表
-            Step 4: ``embedding.embed_documents(texts)`` → 向量列表
-            Step 5: ``vector_store.add_embeddings(ids, vectors, metadatas, documents)``
-            Step 6: 返回切片数量
+            Step 1: 根据文件扩展名获取 chunking 策略
+            Step 2: ``strategy.execute(file_path)`` → 解析 + 切片
+            Step 3: ``embedding.embed_documents(texts)`` → 向量列表
+            Step 4: ``vector_store.add_embeddings(ids, vectors, metadatas, documents)``
+            Step 5: 返回切片数量
 
         参数:
             file_path: 文档的完整路径
@@ -95,29 +96,21 @@ class DocumentPipeline:
             生成的切片数量
 
         异常:
-            FileNotFoundError: 文件不存在
             ValueError: 不支持的文件格式
             ParseError: 解析过程出错
             RuntimeError: 向量存储失败
         """
-        # === Step 1: 获取解析器 ===
+        # === Step 1: 获取策略 ===
         ext = os.path.splitext(file_path)[1].lower()
-        parser: DocumentParser = self._parser_router.get_parser(ext)
-        if parser is None:
+        strategy: Optional[ChunkingStrategy] = self._strategy_router.get_strategy(ext)
+        if strategy is None:
             raise ValueError(
                 f"不支持的文件格式 '{ext}'，支持的格式: "
-                f"{', '.join(self._parser_router.get_supported_extensions())}"
+                f"{', '.join(self._strategy_router.get_supported_extensions())}"
             )
 
-        # === Step 2: 解析文档 ===
-        parsed: ParsedDocument = parser.parse(file_path)
-
-        # 空文档快速返回
-        if not parsed.content.strip():
-            return 0
-
-        # === Step 3: 切片 ===
-        # 构建文档级元数据，传递给 splitter 合并到每个 chunk
+        # === Step 2: 执行策略（解析 + 切片） ===
+        # 构建文档级元数据，传递给策略合并到每个 chunk
         doc_metadata = {
             "document_id": document_id,
             "user_id": user_id,
@@ -125,23 +118,18 @@ class DocumentPipeline:
             "source": file_path,
             "document_name": filename or os.path.basename(file_path),
         }
-        # 合并解析器提取的元数据（如 title, author, total_pages）
-        doc_metadata.update(parsed.metadata)
 
-        chunks: List[DocumentChunk] = self._splitter.split(
-            parsed.content,
-            metadata=doc_metadata,
-        )
+        chunks = strategy.execute(file_path, metadata=doc_metadata)
 
         if not chunks:
             self.last_chunks = []
             return 0
 
-        # === Step 4: Embedding ===
+        # === Step 3: Embedding ===
         texts = [chunk.content for chunk in chunks]
         vectors = self._embedding.embed_documents(texts)
 
-        # === Step 5: 构建 IDs 和 metadatas 并存储 ===
+        # === Step 4: 构建 IDs 和 metadatas 并存储 ===
         ids: List[str] = []
         metadatas: List[dict] = []
 
@@ -152,7 +140,7 @@ class DocumentPipeline:
             # 合并 chunk 级别的元数据
             chunk_metadata = dict(chunk.metadata)
             chunk_metadata["chunk_index"] = chunk.chunk_index
-            chunk_metadata["content"] = chunk.content  # 文本内容也存到 metadata，兼容所有 ChromaDB 版本
+            chunk_metadata["content"] = chunk.content  # 文本内容也存到 metadata
             metadatas.append(chunk_metadata)
 
         self._vector_store.add_embeddings(
@@ -165,18 +153,15 @@ class DocumentPipeline:
         # 保留切片数据，供外部保存到 SQL Chunk 表
         self.last_chunks = chunks
 
-        # === Step 6: 返回切片数量 ===
+        # === Step 5: 返回切片数量 ===
         return len(chunks)
 
-    @property
-    def parser_router(self) -> ParserRouter:
-        """返回当前使用的解析器路由实例"""
-        return self._parser_router
+    # ── 属性（兼容旧接口的部分访问） ──
 
     @property
-    def splitter(self) -> TextSplitter:
-        """返回当前使用的切片器实例"""
-        return self._splitter
+    def strategy_router(self) -> StrategyRouter:
+        """返回当前使用的策略路由实例"""
+        return self._strategy_router
 
     @property
     def embedding(self) -> EmbeddingBackend:

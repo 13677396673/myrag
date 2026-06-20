@@ -33,6 +33,7 @@ from app.rag.pipeline import DocumentPipeline
 from app.rag.rag_engine import RAGEngine
 from app.rag.retrievers import create_retriever as _create_retriever
 from app.rag.splitters import FixedSizeSplitter
+from app.rag.strategies import StrategyRouter, register_default_strategies
 from app.rag.vector_stores import ChromaDBStore
 from app.services.admin_service import AdminService
 from app.services.conversation_service import ConversationService
@@ -74,6 +75,7 @@ class Container:
         # ── RAG 组件（惰性引用） ──
         self._parser_router: Optional[ParserRouter] = None
         self._splitter: Optional[FixedSizeSplitter] = None
+        self._strategy_router: Optional[StrategyRouter] = None
         self._embedding: Optional[object] = None
         self._vector_store: Optional[object] = None
         self._llm: Optional[object] = None
@@ -245,15 +247,31 @@ class Container:
         return self._retriever
 
     @property
+    def strategy_router(self) -> StrategyRouter:
+        """文档 chunking 策略路由
+
+        注册了所有内置策略（按文档类型配对不同 parser + splitter）。
+        取代了直接使用 ``parser_router`` + ``splitter`` 的方式。
+        """
+        if self._strategy_router is None:
+            router = StrategyRouter()
+            register_default_strategies(
+                router,
+                chunk_size=self._settings.SPLITTER_CHUNK_SIZE,
+                chunk_overlap=self._settings.SPLITTER_CHUNK_OVERLAP,
+            )
+            self._strategy_router = router
+        return self._strategy_router
+
+    @property
     def pipeline(self) -> DocumentPipeline:
         """文档处理管道
 
-        组合 parser_router + splitter + embedding + vector_store。
+        组合 strategy_router + embedding + vector_store。
         """
         if self._pipeline is None:
             self._pipeline = DocumentPipeline(
-                parser_router=self.parser_router,
-                splitter=self.splitter,
+                strategy_router=self.strategy_router,
                 embedding=self.embedding,
                 vector_store=self.vector_store,
             )
