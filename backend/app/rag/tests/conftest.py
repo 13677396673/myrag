@@ -12,7 +12,7 @@ import pytest
 from app.rag.interfaces.parser import ParsedDocument, DocumentParser
 from app.rag.interfaces.splitter import TextSplitter, DocumentChunk
 from app.rag.interfaces.embedding import EmbeddingBackend
-from app.rag.interfaces.vector_store import VectorStore, SearchResult
+from app.rag.interfaces.vector_store import VectorStore, SearchResult, Document
 from app.rag.interfaces.llm import LLMBackend
 from app.rag.interfaces.retriever import Retriever
 from app.rag.strategies import StrategyRouter, ChunkingStrategy
@@ -93,24 +93,51 @@ class MockVectorStore(VectorStore):
         self.added_ids = None
         self.added_vectors = None
         self.added_metadatas = None
+        self._documents: List[Document] = []
 
     def add_embeddings(self, ids, vectors, metadatas, documents=None):
         self.added_ids = ids
         self.added_vectors = vectors
         self.added_metadatas = metadatas
         self.added_documents = documents
+        # 同步保存文档供 get_all 使用
+        if documents:
+            for i, doc_id in enumerate(ids):
+                self._documents.append(Document(
+                    id=doc_id,
+                    content=documents[i] if i < len(documents) else "",
+                    metadata=metadatas[i] if i < len(metadatas) else {},
+                ))
 
     def search(self, query_vector, top_k=5, filter_conditions=None):
         return []
 
     def delete(self, ids):
-        pass
+        self._documents = [d for d in self._documents if d.id not in ids]
 
     def delete_by_metadata(self, filter_conditions):
-        return 0
+        before = len(self._documents)
+        self._documents = [
+            d for d in self._documents
+            if not all(d.metadata.get(k) == v for k, v in (filter_conditions or {}).items())
+        ]
+        return before - len(self._documents)
 
     def count(self, filter_conditions=None):
-        return 0
+        if filter_conditions is None:
+            return len(self._documents)
+        return sum(
+            1 for d in self._documents
+            if all(d.metadata.get(k) == v for k, v in filter_conditions.items())
+        )
+
+    def get_all(self, filter_conditions=None):
+        if filter_conditions is None:
+            return list(self._documents)
+        return [
+            d for d in self._documents
+            if all(d.metadata.get(k) == v for k, v in filter_conditions.items())
+        ]
 
 
 # =========================================================================

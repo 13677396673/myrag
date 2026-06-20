@@ -20,6 +20,7 @@ from app.rag.interfaces import (
     EmbeddingBackend,
     VectorStore,
     SearchResult,
+    Document,
     LLMBackend,
     Retriever,
 )
@@ -117,6 +118,23 @@ class MockVectorStore(VectorStore):
             1 for item in self._data.values()
             if all(item["metadata"].get(k) == v for k, v in filter_conditions.items())
         )
+
+    def get_all(self, filter_conditions=None):
+        results = []
+        for id_, item in self._data.items():
+            if filter_conditions:
+                match = all(
+                    item["metadata"].get(k) == v
+                    for k, v in filter_conditions.items()
+                )
+                if not match:
+                    continue
+            results.append(Document(
+                id=id_,
+                content=item.get("document") or "",
+                metadata=item["metadata"],
+            ))
+        return results
 
 
 class MockLLMBackend(LLMBackend):
@@ -461,7 +479,7 @@ class TestInterfaceSignatures:
             "DocumentParser", "ParsedDocument",
             "TextSplitter", "DocumentChunk",
             "EmbeddingBackend",
-            "VectorStore", "SearchResult",
+            "VectorStore", "SearchResult", "Document",
             "LLMBackend",
             "Retriever",
         }

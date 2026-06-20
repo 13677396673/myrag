@@ -23,6 +23,7 @@
   - [x] `delete(ids)` — 按 ID 删除
   - [x] `delete_by_metadata(filter_conditions)` — 按条件查询后删除
   - [x] `count(filter_conditions)` — 计数
+  - [x] `get_all(filter_conditions)` — 获取全量文档（Phase 9 新增，供 BM25 建索引使用）
 
 ### 2. 预留向量库
 

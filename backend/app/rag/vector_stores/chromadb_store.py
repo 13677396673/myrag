@@ -21,7 +21,7 @@ from typing import List, Optional, Dict, Any
 import chromadb
 from chromadb.config import Settings as ChromaSettings
 
-from app.rag.interfaces.vector_store import VectorStore, SearchResult
+from app.rag.interfaces.vector_store import VectorStore, SearchResult, Document
 
 
 class ChromaDBStore(VectorStore):
@@ -155,3 +155,31 @@ class ChromaDBStore(VectorStore):
 
         results = self._collection.get(where=filter_conditions)
         return len(results.get("ids", []))
+
+    def get_all(
+        self,
+        filter_conditions: Optional[Dict[str, Any]] = None,
+    ) -> List[Document]:
+        """获取所有文档（不含向量）
+
+        参数:
+            filter_conditions: 可选的元数据过滤条件
+
+        返回:
+            Document 列表
+        """
+        kwargs: Dict[str, Any] = {}
+        if filter_conditions:
+            kwargs["where"] = filter_conditions
+        results = self._collection.get(**kwargs)
+        if not results["ids"]:
+            return []
+
+        docs = []
+        for i in range(len(results["ids"])):
+            docs.append(Document(
+                id=results["ids"][i],
+                content=results["documents"][i] if results.get("documents") else "",
+                metadata=results["metadatas"][i] if results.get("metadatas") else {},
+            ))
+        return docs

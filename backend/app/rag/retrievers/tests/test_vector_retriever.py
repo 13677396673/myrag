@@ -300,14 +300,20 @@ class TestVectorRetrieverFactory:
         assert retriever._default_top_k == 10
         assert retriever._similarity_threshold == 0.7
 
-    def test_create_hybrid_raises_not_implemented(self):
-        """测试创建 hybrid 模式抛出 ValueError"""
-        from app.rag.retrievers import create_retriever
+    def test_create_hybrid_retriever(self):
+        """测试创建 HybridRetriever"""
+        from app.rag.retrievers import create_retriever, HybridRetriever, VectorRetriever
 
         settings = self._make_settings(mode="hybrid")
+        emb = MagicMock()
+        store = MagicMock()
 
-        with pytest.raises(ValueError, match="混合检索尚未实现"):
-            create_retriever(settings, embedding=MagicMock(), vector_store=MagicMock())
+        retriever = create_retriever(settings, embedding=emb, vector_store=store)
+
+        assert isinstance(retriever, HybridRetriever)
+        assert isinstance(retriever.vector_retriever, VectorRetriever)
+        assert retriever.vector_retriever.embedding is emb
+        assert retriever.vector_retriever.vector_store is store
 
     def test_unsupported_mode_raises(self):
         """测试不支持的 RETRIEVAL_MODE 抛出 ValueError"""

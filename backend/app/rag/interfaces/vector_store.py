@@ -1,6 +1,14 @@
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import List, Optional, Dict, Any
+
+
+@dataclass
+class Document:
+    """存储中的文档（不含向量和评分）"""
+    id: str
+    content: str
+    metadata: Dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -82,5 +90,21 @@ class VectorStore(ABC):
 
         返回:
             匹配的向量数量
+        """
+        ...
+
+    @abstractmethod
+    def get_all(
+        self,
+        filter_conditions: Optional[Dict[str, Any]] = None,
+    ) -> List[Document]:
+        """
+        获取所有文档（不含向量），用于 BM25 等需要全量语料的场景。
+
+        参数:
+            filter_conditions: 可选的元数据过滤条件
+
+        返回:
+            Document 列表，每个元素包含 id / content / metadata
         """
         ...
